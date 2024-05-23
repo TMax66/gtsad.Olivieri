@@ -26,9 +26,9 @@ dati <- read_excel(here("data", "dati.xlsx"))
   
 
 dtpat <- dati %>%
-  filter(!is.na(esito)) %>%
+  filter(!is.na(esito)) %>%  
  # distinct() %>%
-  mutate(stadio = casefold(stadio),
+  mutate(#stadio = casefold(stadio),
          stadio = ifelse(stadio %in% c("femmina", "maschio", "Maschio", "Femmina"), "Adult", 
                          ifelse(stadio == "larva", "Larvae", 
                                 ifelse(stadio == "ninfa", "Nymphae", stadio))), 
@@ -45,26 +45,47 @@ dtpat <- dati %>%
                            "settembre" = "Autumn",
                            "ottobre" = "Autumn", 
                            "novembre" = "Autumn"), 
-         stagioneanno = paste0(annoreg,stagione)) %>%
+         stagioneanno = paste0(annoreg,stagione)) %>% 
   filter(stadio != "n.d.")
 
 
-pat <- dtpat %>% 
-  mutate(pat = ifelse(esito != "Non dimostrata presenza", "1", "0")) %>%  
-  pivot_wider(names_from = "prova", values_from = "pat", values_fill = '0' ) %>% 
-  select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, annoreg, stagioneanno,  altitudine, 17:22 ) %>%   
-  mutate(across(c(10:13), as.numeric)) %>% 
-  group_by(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, stagioneanno,altitudine) %>% 
-  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% ungroup() %>% 
-  rowwise() %>%
-  mutate(Pat = sum(c_across(c(10:13)), na.rm = T),
-         Pat2 = ifelse(Pat == 0, 0, 1), 
-         PatCat = ifelse(Pat2 == 0 , "Neg", "Pos"),
-         stadio = factor(stadio, levels =c("Larvae", "Nymphae",  "Adult"))
-         )%>%
-  filter(specie == "Ixodes ricinus")
+# pat <- dtpat %>% 
+#   mutate(pat = ifelse(esito != "Non dimostrata presenza", "1", "0")) %>%  View()
+#   pivot_wider(names_from = "prova", values_from = "pat", values_fill = '0' ) %>% 
+#   select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, 
+#          annoreg, stagioneanno,  altitudine, 17:22 ) %>% 
+#   mutate(across(c(10:13), as.numeric)) %>% View()
+#   group_by(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, stagioneanno,altitudine) %>% 
+#   summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% ungroup() %>% 
+#   rowwise() %>% 
+#   mutate(Pat = sum(c_across(c(10:13)), na.rm = T),
+#          Pat2 = ifelse(Pat == 0, 0, 1), 
+#          PatCat = ifelse(Pat2 == 0 , "Neg", "Pos"),
+#          stadio = factor(stadio, levels =c("Larvae", "Nymphae",  "Adult"))
+#          )%>%
+#   filter(specie == "Ixodes ricinus")
  
 
+  pat <- dtpat %>% select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, 
+                          annoreg, stagioneanno,  altitudine, prova, esito) %>% 
+    mutate(pat = ifelse(esito != "Non dimostrata presenza", "1", "0")) %>%  
+  pivot_wider(names_from = "prova", values_from = "pat", values_fill = '0' ) %>% 
+    # select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, 
+    #        annoreg, stagioneanno,  altitudine, 17:22 ) %>% 
+    mutate(across(c(11:16), as.numeric)) %>% 
+    group_by(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, stagioneanno,altitudine) %>% 
+    summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% 
+    ungroup() %>% 
+    rowwise() %>% 
+    mutate(Pat = sum(c_across(c(10:15)), na.rm = T),
+           Pat2 = ifelse(Pat == 0, 0, 1), 
+           PatCat = ifelse(Pat2 == 0 , "Neg", "Pos"),
+           stadio = factor(stadio, levels =c("Larvae", "Nymphae",  "Adult"))
+    )%>% 
+    filter(specie == "Ixodes ricinus") 
+  
+  
+  
 # pat %>% 
 #   select(stadio, PatCat) %>%  
 #   group_by(stadio, PatCat) %>% 
@@ -107,11 +128,12 @@ t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit0 <- stan_glm(Pat2 ~  stadio,   data = pat,family = binomial(link = "logit"))
 fit1 <- stan_glm(Pat2 ~   stadio+stagione,   data = pat,family = binomial(link = "logit"))
 fit2<- stan_glm(Pat2 ~   stadio*stagione,   data = pat,family = binomial(link = "logit"))
-fit3 <- stan_glm(Pat2 ~   stadio+stagioneanno,   data = pat,family = binomial(link = "logit"))
-fit4 <- stan_glm(Pat2 ~   stadio+stagione+annoreg,   data = pat,family = binomial(link = "logit"))
-fit5 <- stan_glm(Pat2 ~   stadio+altitudine,   data = pat,family = binomial(link = "logit"))
-
-
+#fit3 <- stan_glm(Pat2 ~   stadio+stagioneanno,   data = pat,family = binomial(link = "logit"))
+#fit4 <- stan_glm(Pat2 ~   stadio+stagione+annoreg,   data = pat,family = binomial(link = "logit"))
+fit3 <- stan_glm(Pat2 ~   stadio+altitudine,   data = pat,family = binomial(link = "logit"))
+fit4 <- stan_glm(Pat2 ~   altitudine,   data = pat,family = binomial(link = "logit"))
+fit5 <- stan_glm(Pat2~ altitudine*stadio, data = pat, family = binomial(link = "logit"))
+fit6 <- stan_glm(Pat2~ altitudine+stadio+stagione, data = pat, family = binomial(link = "logit"))
 #We recommend calling 'loo' again with argument 'k_threshold = 0.7'
 loo0 <- loo(fit0, k_threshold = 0.7)
 loo1 <- loo(fit1, k_threshold = 0.7)
@@ -119,20 +141,29 @@ loo2 <- loo(fit2, k_threshold = 0.7)
 loo3 <- loo(fit3, k_threshold = 0.7)
 loo4 <- loo(fit4, k_threshold = 0.7)
 loo5 <- loo(fit5, k_threshold = 0.7)
+loo6 <- loo(fit6, k_threshold = 0.7)
 
-print(loo_compare( loo1, loo2, loo3, loo4, loo5,loo0), simplify = FALSE)
+x <- loo_compare(loo0, loo1, loo2, loo3, loo4, loo5, loo6)
 
 
+# print(x)
+# library(knitr)
+# library(kableExtra)
+# 
+# options(digits = 2)
+# kbl(x) %>% as.
+#   rowid_to_column(var = "model") %>% View()
+#   kable_styling()
 
 
 fit0 <- stan_glm(Pat2 ~  stadio,   data = pat,family = binomial(link = "logit"))
 
 
 
-posterior <- as.matrix(fit0)
+posterior <- as.matrix(fit6)
 posterior %>% as_tibble() %>% 
-  pivot_longer( cols = 1:3, names_to = "factors", values_to = "est") %>%  
-  mutate(factors = str_remove(factors,  "stadio" )) %>% #, 
+  pivot_longer( cols = 1:7, names_to = "factors", values_to = "est") %>%   
+  mutate(factors = str_remove(factors,  "stadio" )) %>% 
          # factors = factor(factors, levels = c("Adult", "Nymphae", "Intercept")),
          # est = invlogit(est)) %>% 
   ggplot()+
@@ -146,15 +177,15 @@ posterior %>% as_tibble() %>%
          # stadioNymphae = invlogit(stadioNymphae), 
          # stadioLarvae = invlogit(`(Intercept)`), 
     stadioLarvae = `(Intercept)`,
-         "Nymphae vs Larvae" = stadioNymphae - stadioLarvae, 
-         "Adult vs Larvae" = stadioAdult-stadioLarvae, 
-         "Adult vs Nymphae" = stadioAdult-stadioNymphae) %>% 
+         "Nymphae vs Larvae" =    stadioNymphae - stadioLarvae, 
+         "Adult vs Larvae" =  stadioAdult - stadioLarvae , 
+         "Adult vs Nymphae" = stadioAdult - stadioNymphae) %>% 
   
   
   select(5:7) %>% 
   
   
-  pivot_longer( cols = 1:3, names_to = "factors", values_to = "est") %>% 
+  pivot_longer( cols = 1:3, names_to = "factors", values_to = "est") %>% View()
   
   
   ggplot()+
@@ -172,7 +203,7 @@ library(performance)
 
 tfit <- describe_posterior(
   fit0,
-  centrality = "median",
+  centrality = "mean",
   test = c("rope", "p_direction"), 
   rope_range = c(-0.1, 0.1)
 )
@@ -180,12 +211,15 @@ tfit <- describe_posterior(
  model_performance(fit0)
 
 tfit %>% 
-  select(Parameter, Median, CI_low, CI_high, pd) %>%
-  mutate_at(2:5, round, 2) %>%  
+  select(Parameter, Mean, CI_low, CI_high, pd, ROPE_Percentage) %>%
+  mutate_at(2:6, round, 2) %>%  
   mutate(Parameter = str_remove(Parameter,  "stadio" ),
-         Median = round(exp(Median),2), 
+         Mean = round(exp(Mean),2), 
          CI_low = round(exp(CI_low), 2), 
-         CI_high = round(exp(CI_high),2)) 
+         CI_high = round(exp(CI_high),2)) %>%  as.data.frame() %>% 
+  write.xlsx(file = "model.xlsx")
+
+
 
 
 plot_model(fit0, type = "est", 
