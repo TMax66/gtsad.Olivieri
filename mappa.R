@@ -1,34 +1,27 @@
----
-title: "TicksMap"
-author: "IZSLER"
-format: 
-  dashboard:
-    logo: images/logo.png
-    orientation: columns
-    theme: yeti
-    # nav-buttons: [linkedin, twitter, github]
----
-
-```{r}
 library(tmap)
-library(tidyverse)
-library(here)
+library(sf)
+library(leaflet)
+library(rmapshaper)
 library(fst)
-```
 
-
-
-## Column
-
-### Row 
-
-:::{.card title="Aree di rischio"}
-```{r}
 dt <- read_fst(here("data", "pat.fst"))
-regioni <- readRDS(here("data", "regioni.rds"))
-province <- readRDS(here("data", "province.rds"))
-comuni <- readRDS(here("data", "comuni.rds"))
 
+# comuni <- st_read("https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_municipalities.geojson")
+# 
+# province <- st_read("https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_provinces.geojson")
+# 
+# regioni <- st_read("https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson")
+# 
+# saveRDS(
+#   st_make_valid(comuni), file = "comuni.rds")
+# saveRDS(
+#   st_make_valid(province), file = "province.rds")
+# saveRDS(
+#   st_make_valid(regioni), file = "regioni.rds")
+
+
+regioni <- readRDS(here("data", "regioni.rds"))
+comuni <- readRDS(here("data", "comuni.rds"))
 
 dt %>% 
   group_by(comune, PatCat) %>% 
@@ -67,15 +60,10 @@ tm_shape(regioni %>%
             legend.bg.alpha = 1)+
   tm_scale_bar(breaks = c(0, 10, 30), text.size = .1,position = "right")+
   tm_compass(type = "8star", position = c("right", "bottom"), size = 0.8) 
-  
- 
- 
-```
-:::
-## Column
- 
-```{r}
 
-```
-  
+
+#+tm_fill("risk", palette = "Blues")+tm_borders()
+
  
+
+  
