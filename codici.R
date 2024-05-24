@@ -10,7 +10,7 @@ library(sjPlot)
 library(hrbrthemes)
 library(ggdist)
 
-dati <- read_excel(here("data", "dati.xlsx"))
+dati <- read_excel(here("data", "dati_old.xlsx"))
 
 
 

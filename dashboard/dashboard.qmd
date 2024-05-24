@@ -1,0 +1,34 @@
+---
+title: "TicksMap"
+author: "IZSLER"
+format: 
+  dashboard:
+    logo: images/logo.png
+    orientation: columns
+    theme: yeti
+    # nav-buttons: [linkedin, twitter, github]
+---
+
+## Column
+
+### Row 
+
+:::{.card title="Aree di rischio"}
+```{r}
+library(leaflet)
+
+lat <- 48
+long <- 350
+
+leaflet() |> addTiles() |> 
+  setView(long, lat, zoom = 2)
+ 
+```
+:::
+## Column
+ 
+```{r}
+
+```
+  
+ 
