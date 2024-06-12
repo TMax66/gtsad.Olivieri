@@ -9,8 +9,11 @@ library(see)
 library(sjPlot)
 library(hrbrthemes)
 library(ggdist)
+library(bayesrules)
+library(binom)
 
-dati <- read_excel(here("data", "dati_old.xlsx"))
+
+dati <- read_excel(here("data", "dati.xlsx"))
 
 
 
@@ -46,7 +49,8 @@ dtpat <- dati %>%
                            "ottobre" = "Autumn", 
                            "novembre" = "Autumn"), 
          stagioneanno = paste0(annoreg,stagione)) %>% 
-  filter(stadio != "n.d.")
+  filter(stadio != "n.d.") %>% 
+  mutate(specie = stringr::str_to_sentence(specie)) 
 
 
 # pat <- dtpat %>% 
@@ -81,11 +85,106 @@ dtpat <- dati %>%
            Pat2 = ifelse(Pat == 0, 0, 1), 
            PatCat = ifelse(Pat2 == 0 , "Neg", "Pos"),
            stadio = factor(stadio, levels =c("Larvae", "Nymphae",  "Adult"))
-    )%>% 
-    filter(specie == "Ixodes ricinus") 
+    )
+    
+   # filter(specie == "Ixodes ricinus") 
   
+dtpat %>% select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, 
+                          annoreg, stagioneanno,  altitudine, prova, esito) %>% 
+    mutate(pat = ifelse(esito != "Non dimostrata presenza", "pos", "neg")) %>% 
+  filter(prova != "Sequenziamento acidi nucleici", 
+         prova != "Identificazione zecche dell'Ordine Ixodida") %>% 
+  group_by(specie, prova, pat) %>% 
+  count() %>%  
+  pivot_wider(names_from = pat, values_from = n, values_fill = 0) %>% 
+  mutate(tested = neg+pos, 
+         specie = recode(specie, 
+                         "N.d." = "nd"), 
+         prova2 = str_remove(prova, ": agente eziologico"), 
+                prova2 = str_remove(prova2, "\\."), 
+         specie = str_remove(specie, "\\.")) -> prev
+
+   
+
+
+ 
+resbinom <- binom.bayes(
+  x = prev$pos, n = prev$tested,
+  type = "central", conf.level = 0.95, tol = 1e-9)
+
+options(digits = 1)
+prev %>%
+  select(specie, prova2, pos, tested) %>% 
+  bind_cols(
+    resbinom %>%
+      select(mean, lower, upper)
+  ) %>%  ungroup() %>% 
+  mutate(across(6:8, ~ .x*100)) %>%  excel()
+
+
+binom.bayes.densityplot(resbinom)
+
+
+sim <- function(p, t){
+  data.frame(pi = rbeta(10000, 0.5+p, 0.5+(t-p)))}
+
+
+
+prev %>% 
+  split(., list(.$specie, .$prova), drop = TRUE) %>%  
+  map(~sim(.$pos, .$tested))-> SIM
+
+ 
+
+
+SIM %>% 
+  unlist() %>%  data.frame() %>%  
+  rownames_to_column() %>%   
+  rename("pi" = ".") %>% 
+  separate(rowname, c("Specie", "Pathogen", "p"), sep = "\\." ) -> simPrevalence
   
-  
+    
+simPrevalence %>% 
+  group_by(Specie, Pathogen) %>% 
+  summarise(medianP = median(pi), 
+          liminf = quantile(pi, p = 0.025),
+          limsup = quantile(pi, p = 0.975)) %>% excel()
+
+
+library(ggridges)
+library(grid)
+
+p <- simPrevalence %>% 
+  filter(Specie == "Ixodes ricinus") %>% 
+  ggplot()+
+  aes(x = pi, y = Pathogen)+
+  geom_density_ridges(scale=1, rel_min_height= 0.01)
+  # facet_wrap(~Specie, scales = "free")+
+  # theme(strip.text.y = element_blank())
+
+
+gt <- ggplotGrob(p)
+grid.draw(gt)
+
+# library(binom)
+#   
+# options(digits=2)
+# 
+# resbinom <- binom.bayes(
+#   x = prev$pos, n = prev$tested,
+#   type = "highest", conf.level = 0.95, tol = 1e-9)
+# 
+# prev %>% 
+#   select(-neg) %>% 
+#   bind_cols(
+#     resbinom %>% 
+#       select(mean, lower, upper)
+#   ) %>% 
+#   
+#   filter(prova == "Borrelia burgdorferi sensu lato complex: agente eziologico") %>% 
+#   View()
+
+
 # pat %>% 
 #   select(stadio, PatCat) %>%  
 #   group_by(stadio, PatCat) %>% 
