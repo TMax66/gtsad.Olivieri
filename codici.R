@@ -104,8 +104,11 @@ dtpat %>% select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione,
                 prova2 = str_remove(prova2, "\\."), 
          specie = str_remove(specie, "\\.")) -> prev
 
-   
-
+prev_overall <- prev %>% 
+  group_by(prova) %>% 
+  summarise(pos = sum(pos), 
+            tested = sum(tested))
+  
 
  
 resbinom <- binom.bayes(
@@ -122,49 +125,68 @@ prev %>%
   mutate(across(6:8, ~ .x*100)) %>%  excel()
 
 
-binom.bayes.densityplot(resbinom)
-
-
-sim <- function(p, t){
-  data.frame(pi = rbeta(10000, 0.5+p, 0.5+(t-p)))}
-
-
-
-prev %>% 
-  split(., list(.$specie, .$prova), drop = TRUE) %>%  
-  map(~sim(.$pos, .$tested))-> SIM
-
+binom.bayes(
+  x = prev_overall$pos, n = prev_overall$tested,
+  type = "central", conf.level = 0.95, tol = 1e-9)-> overall
  
+prev_overall %>% 
+  bind_cols(
+    overall %>% 
+      select(mean, lower, upper)
+  ) %>% 
+  mutate(across(4:6, ~ .x*100), 
+         across(4:6, ~ round(.x, 2))) %>%  excel()
 
 
-SIM %>% 
-  unlist() %>%  data.frame() %>%  
-  rownames_to_column() %>%   
-  rename("pi" = ".") %>% 
-  separate(rowname, c("Specie", "Pathogen", "p"), sep = "\\." ) -> simPrevalence
-  
-    
-simPrevalence %>% 
-  group_by(Specie, Pathogen) %>% 
-  summarise(medianP = median(pi), 
-          liminf = quantile(pi, p = 0.025),
-          limsup = quantile(pi, p = 0.975)) %>% excel()
 
 
-library(ggridges)
-library(grid)
-
-p <- simPrevalence %>% 
-  filter(Specie == "Ixodes ricinus") %>% 
-  ggplot()+
-  aes(x = pi, y = Pathogen)+
-  geom_density_ridges(scale=1, rel_min_height= 0.01)
-  # facet_wrap(~Specie, scales = "free")+
-  # theme(strip.text.y = element_blank())
+### IXODES RICINUS----
+### 
 
 
-gt <- ggplotGrob(p)
-grid.draw(gt)
+
+
+
+# sim <- function(p, t){
+#   data.frame(pi = rbeta(10000, 0.5+p, 0.5+(t-p)))}
+# 
+# 
+# 
+# prev %>% 
+#   split(., list(.$specie, .$prova), drop = TRUE) %>%  
+#   map(~sim(.$pos, .$tested))-> SIM
+# 
+#  
+# 
+# 
+# SIM %>% 
+#   unlist() %>%  data.frame() %>%  
+#   rownames_to_column() %>%   
+#   rename("pi" = ".") %>% 
+#   separate(rowname, c("Specie", "Pathogen", "p"), sep = "\\." ) -> simPrevalence
+#   
+#     
+# simPrevalence %>% 
+#   group_by(Specie, Pathogen) %>% 
+#   summarise(medianP = median(pi), 
+#           liminf = quantile(pi, p = 0.025),
+#           limsup = quantile(pi, p = 0.975)) %>% excel()
+# 
+# 
+# library(ggridges)
+# library(grid)
+# 
+# p <- simPrevalence %>% 
+#   filter(Specie == "Ixodes ricinus") %>% 
+#   ggplot()+
+#   aes(x = pi, y = Pathogen)+
+#   geom_density_ridges(scale=1, rel_min_height= 0.01)
+#   # facet_wrap(~Specie, scales = "free")+
+#   # theme(strip.text.y = element_blank())
+# 
+# 
+# gt <- ggplotGrob(p)
+# grid.draw(gt)
 
 # library(binom)
 #   

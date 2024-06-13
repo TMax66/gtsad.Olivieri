@@ -71,7 +71,7 @@ attr(xticks, "labels") <- xtlab
              
   #NINFE ----            
 
-  ninfe <- dtS %>% ungroup() %>% 
+ninfe <- dtS %>% ungroup() %>% 
     mutate(Prevalence = sprintf("%.2f", mean), .after = Totale) %>% 
     mutate(CI = paste0("[",sprintf("%.2f", lower),", ", sprintf("%.2f", upper), "]")) %>%  
     filter(Stady == "Nymphs", Specie == "Ixodes ricinus") %>%  
