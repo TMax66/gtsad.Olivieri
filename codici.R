@@ -187,13 +187,13 @@ tabOverall %>% tibble() %>%
              txt_gp = fpTxtGp(ticks=gpar(cex=1), 
                               xlab = gpar(cex=1)))  %>% 
   fp_add_header(stagione = "Season",
-                stadio = "Stady",
+                stadio = "Stage",
                 Pos = "N.positive" ,
                 n = "N.tested"  ,
                 perc = "% Positive", 
                 Prevalence = "Prevalence",
-                liminf = "95%CI liminf", 
-                limsup = "95%CI limsup") 
+                liminf = "95% lower lim.", 
+                limsup = "95% upper lim.") 
 
   
 
@@ -352,19 +352,20 @@ riskcom <- as.vector(risk$comune)
 
 
 comuni %>% 
-  filter(name %in% riskcom) %>%  
-  left_join(risk, by = c("name" = "comune")) -> risk_comuni
+  filter(name %in% riskcom) %>%   
+  left_join(risk, by = c("name" = "comune")) %>% 
+  rename(prevalence = risk)-> risk_comuni
 
-
+library(tmap)
 
 tm_shape(regioni %>% 
            filter(reg_name == "Lombardia"))+tm_borders()+
   tm_shape(comuni %>%
              filter(reg_name == "Lombardia"))+tm_borders()+
   tm_shape(province)+tm_borders( "blue")+
-  tm_shape(risk_comuni)+tm_borders()+tm_fill("risk")+
+  tm_shape(risk_comuni)+tm_borders()+tm_fill("prevalence")+
   
-  tm_layout(main.title = "Prevalence of Ticks with tick-borne pathogens",
+  tm_layout(main.title = "",
             main.title.size = 0.9, 
             legend.outside = TRUE, frame = FALSE, 
             legend.text.size = 0.8, 
@@ -406,7 +407,8 @@ riskcom <- as.vector(risk$comune)
 
 comuni %>% 
   filter(name %in% riskcom) %>%  
-  left_join(risk, by = c("name" = "comune")) -> risk_comuni
+  left_join(risk, by = c("name" = "comune")) %>% 
+  rename(prevalence = risk)-> risk_comuni
 
 
 
@@ -415,11 +417,11 @@ tm_shape(regioni %>%
   tm_shape(comuni %>%
              filter(reg_name == "Lombardia"))+tm_borders()+
   tm_shape(province)+tm_borders( "blue")+
-  tm_shape(risk_comuni)+tm_borders()+tm_fill("risk")+
+  tm_shape(risk_comuni)+tm_borders()+tm_fill("prevalence")+
   tm_graticules() +
   
-  tm_layout(main.title = "",
-            main.title.size = 0.9, 
+  tm_layout(main.title = "A",
+            main.title.size = 0.8, 
             legend.outside = TRUE, frame = FALSE, 
             legend.text.size = 0.6, 
             legend.title.size = 1,
@@ -439,7 +441,7 @@ italymap <- tm_shape(regioni)+tm_borders()+
 
 
 mappa1
-print(italymap, vp = grid::viewport(0.54, 0.2, width = 0.4, height = 0.2))
+print(italymap, vp = grid::viewport(0.6, 0.2, width = 0.4, height = 0.2))
 tmap_save(mappa1, "mappa1.png")
 
 
@@ -470,7 +472,8 @@ riskcom <- as.vector(risk$comune)
 
 comuni %>% 
   filter(name %in% riskcom) %>%  
-  left_join(risk, by = c("name" = "comune")) -> risk_comuni
+  left_join(risk, by = c("name" = "comune")) %>% 
+  rename(prevalence = risk)-> risk_comuni  
 
 
 
@@ -479,12 +482,13 @@ tm_shape(regioni %>%
   tm_shape(comuni %>%
              filter(reg_name == "Lombardia"))+tm_borders()+
   tm_shape(province)+tm_borders( "blue")+
-  tm_shape(risk_comuni)+tm_borders()+tm_fill("risk")+
+  tm_shape(risk_comuni)+tm_borders()+tm_fill("prevalence")+
+  tm_graticules() +
   
-  tm_layout(main.title = "",
+  tm_layout(main.title = "B",
             main.title.size = 0.8, 
             legend.outside = TRUE, frame = FALSE, 
-            egend.text.size = 0.6, 
+            legend.text.size = 0.6, 
             legend.title.size = 1,
             #legend.position = c("right","top"),
             legend.bg.color = "white",
@@ -499,7 +503,7 @@ italymap <- tm_shape(regioni)+tm_borders()+
   tm_shape(regioni %>% 
              filter(reg_name == "Lombardia"))+tm_borders(col = "blue")
   
-
+tmap_save(mappa2, "mappa2.png")
  
 
 mappa2
