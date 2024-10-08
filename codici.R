@@ -32,7 +32,7 @@ dtpat <- dati %>%
   mutate(#stadio = casefold(stadio),
          stadio = ifelse(stadio %in% c("femmina", "maschio", "Maschio", "Femmina"), "Adult", 
                          ifelse(stadio == "larva", "Larvae", 
-                                ifelse(stadio == "ninfa", "Nymphae", stadio))), 
+                                ifelse(stadio == "ninfa", "Nymphs", stadio))), 
          stagione = recode(mese, 
                            "dicembre" = "Winter",
                            "gennaio" = "Winter", 
@@ -83,7 +83,7 @@ dtpat <- dati %>%
     mutate(Pat = sum(c_across(c(10:15)), na.rm = T),
            Pat2 = ifelse(Pat == 0, 0, 1), 
            PatCat = ifelse(Pat2 == 0 , "Neg", "Pos"),
-           stadio = factor(stadio, levels =c("Larvae", "Nymphae",  "Adult"))
+           stadio = factor(stadio, levels =c("Larvae", "Nymphs",  "Adult"))
     )
     
    # filter(specie == "Ixodes ricinus") 
@@ -181,7 +181,7 @@ tabOverall %>% tibble() %>%
              clip = c(0,1),
              xlog = FALSE, 
              xlab= "Prevalence",
-             title = "Ticks borne pathogens in Ticks",
+             title = "Ticks borne pathogens in Ticks (The value refers to all tick species)",
              # txt_gp = fpTxtGp(cex=0.90),
              # axes = gpar(cex = 0.9),
              txt_gp = fpTxtGp(ticks=gpar(cex=1), 
@@ -420,7 +420,7 @@ tm_shape(regioni %>%
   tm_shape(risk_comuni)+tm_borders()+tm_fill("prevalence")+
   tm_graticules() +
   
-  tm_layout(main.title = "A",
+  tm_layout(main.title = "",
             main.title.size = 0.8, 
             legend.outside = TRUE, frame = FALSE, 
             legend.text.size = 0.6, 
