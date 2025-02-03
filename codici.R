@@ -7,6 +7,7 @@
 #library(hrbrthemes)
 #library(ggdist)
 #library(bayesrules)
+pkg()
 library(binom)
 library(forestplot)
 
@@ -88,7 +89,12 @@ dtpat <- dati %>%
     
    # filter(specie == "Ixodes ricinus") 
 
-    
+pat %>% 
+  group_by(annoreg, specie) %>% 
+  summarise(n = n()) %>% 
+  mutate(freq = 100*n / sum(n)) %>%  View()
+  
+  
 # codici per tabella 1----
 dtpat %>% select(annoreg,nconfcamp, stadio, specie, comune, provincia, stagione, 
                           annoreg, stagioneanno,  altitudine, prova, esito) %>% 
@@ -144,6 +150,7 @@ prev_overall %>%
 #Prevalenza positività zecche by stadio e stagione----
 
 pat %>% 
+  filter(annoreg == "2023",) %>% 
   select(stadio, PatCat, stagione) %>% 
   group_by(stagione,stadio, PatCat) %>% 
   count() %>% 
@@ -291,7 +298,6 @@ prevall %>%
     resbinom %>% 
       select(mean, lower, upper)
   ) %>%   ungroup()->   tabOverall
-
 
 
 ### forestplot borrelia-----
